@@ -152,6 +152,25 @@ struct GPGGA {
     float age_of_diff_corr;
     int16_t station_id;
 };
+struct GNGGA {
+    bool isValid;
+    int16_t fieldValidity;
+
+    char utc_time[15];
+    char latitude[15];
+    char north_south_indicator;
+    char longitude[15];
+    char east_west_indicator;
+    int16_t position_fix;
+    int16_t satellites_used;
+    float hdop;
+    float msl_altitude;
+    char msl_unit[5];
+    float geoid_separation;
+    char geoid_unit[5];
+    float age_of_diff_corr;
+    int16_t station_id;
+};
 
 /*
     $GPGSA
@@ -177,6 +196,28 @@ struct GPGGA {
     Checksum            *3C
 */
 struct GPGSA {
+    bool isValid;
+    int16_t fieldValidity;
+
+    char mode1;
+    int16_t mode2;
+    int16_t sat_channel_1;
+    int16_t sat_channel_2;
+    int16_t sat_channel_3;
+    int16_t sat_channel_4;
+    int16_t sat_channel_5;
+    int16_t sat_channel_6;
+    int16_t sat_channel_7;
+    int16_t sat_channel_8;
+    int16_t sat_channel_9;
+    int16_t sat_channel_10;
+    int16_t sat_channel_11;
+    int16_t sat_channel_12;
+    float pdop;
+    float hdop;
+    float vdop;
+};
+struct GNGSA {
     bool isValid;
     int16_t fieldValidity;
 
@@ -226,6 +267,54 @@ struct GPGSA {
     Checksum            *7F
 */
 struct GPGSV {
+    bool isValid;
+    int16_t fieldValidity;
+
+    int16_t number_of_messages;
+    int16_t message_idx;
+    int16_t sats_in_view;
+    int16_t sat1_id;
+    int16_t sat1_elevation;
+    int16_t sat1_azimuth;
+    int16_t sat1_snr;
+    int16_t sat2_id;
+    int16_t sat2_elevation;
+    int16_t sat2_azimuth;
+    int16_t sat2_snr;
+    int16_t sat3_id;
+    int16_t sat3_elevation;
+    int16_t sat3_azimuth;
+    int16_t sat3_snr;
+    int16_t sat4_id;
+    int16_t sat4_elevation;
+    int16_t sat4_azimuth;
+    int16_t sat4_snr;
+};
+struct GLGSV {
+    bool isValid;
+    int16_t fieldValidity;
+
+    int16_t number_of_messages;
+    int16_t message_idx;
+    int16_t sats_in_view;
+    int16_t sat1_id;
+    int16_t sat1_elevation;
+    int16_t sat1_azimuth;
+    int16_t sat1_snr;
+    int16_t sat2_id;
+    int16_t sat2_elevation;
+    int16_t sat2_azimuth;
+    int16_t sat2_snr;
+    int16_t sat3_id;
+    int16_t sat3_elevation;
+    int16_t sat3_azimuth;
+    int16_t sat3_snr;
+    int16_t sat4_id;
+    int16_t sat4_elevation;
+    int16_t sat4_azimuth;
+    int16_t sat4_snr;
+};
+struct BDGSV {
     bool isValid;
     int16_t fieldValidity;
 
@@ -310,6 +399,42 @@ struct GPRMC {
 };
 
 /*
+    $GNRMC
+    Recommended Minimum Specific GNSS Data
+    Sentence ID         $GNRMC
+    UTC Time            171102.081 (hhmmss.sss)
+    Status              A (A=datavalid, V=data not valid)
+    Latitude            4835.7692 (ddmm.mmmm)
+    N/S indicator       N (N=north, S=south)
+    Longitude           00220.9694 (dddmm.mmmm)
+    E/W Indicator       E (E=east, W=West)
+    Speed over ground   0.24 (knots)
+    Course over ground  210 ((degrees) Not valid at low speed. LS20126 may derive it from magnetic heading in this case)
+    Date                121011 (ddmmyy)
+    Magnetic variation  0.2 (degree)
+    Variation sense     W (W=west, E=east)
+    Mode                A (A=autonomous, D=DGPS, E=DR)
+    Checksum            *33
+*/
+struct GNRMC {
+    bool isValid;
+    int16_t fieldValidity;
+
+    char utc_time[15];
+    char status;
+    char latitude[15];
+    char north_south_indicator;
+    char longitude[15];
+    char east_west_indicator;
+    float speed_over_ground;
+    float course_over_ground;
+    char date[10];
+    float magnetic_variation;
+    char variation_sense;
+    char mode;
+};
+
+/*
     $GPGLL
     Geographic Position, Latitude / Longitude and time.
     $GPGLL,4448.55381,N,00038.83314,W,134006.00,A,A*7B
@@ -322,6 +447,17 @@ struct GPRMC {
     Data Active or void A (or V)
 */
 struct GPGLL {
+    bool isValid;
+    int16_t fieldValidity;
+
+    char latitude[15];
+    char north_south_indicator;
+    char longitude[15];
+    char east_west_indicator;
+    char fix_time[15];
+    char data_active;
+};
+struct GNGLL {
     bool isValid;
     int16_t fieldValidity;
 
@@ -348,6 +484,21 @@ struct GPGLL {
     Mode: A=Autonomous, D=DGPS, E=DR
 */
 struct GPVTG {
+    bool isValid;
+    int16_t fieldValidity;
+
+    float measured_heading_1;
+    char north_type_1;
+    float measured_heading_2;
+    char north_type_2;
+    float ground_speed_1;
+    char ground_speed_unit_1;
+    float ground_speed_2;
+    char ground_speed_unit_2;
+
+    char mode;
+};
+struct GNVTG {
     bool isValid;
     int16_t fieldValidity;
 
@@ -438,6 +589,8 @@ public:
     bool parse_gpgsa(const char *str);
     bool parse_gngsa(const char *str);
     bool parse_gpgsv(const char *str);
+    bool parse_glgsv(const char *str);
+    bool parse_bdgsv(const char *str);
     bool parse_hchdg(const char *str);
     bool parse_gprmc(const char *str);
     bool parse_gnrmc(const char *str);
@@ -451,12 +604,19 @@ public:
     PLSR2452 last_plsr2452 = {};
     PLSR2457 last_plsr2457 = {};
     GPGGA    last_gpgga = {};
+    GNGGA    last_gngga = {};
     GPGSA    last_gpgsa = {};
+    GNGSA    last_gngsa = {};
     GPGSV    last_gpgsv = {};
+    GLGSV    last_glgsv = {};
+    BDGSV    last_bdgsv = {};
     HCHDG    last_hchdg = {};
     GPRMC    last_gprmc = {};
+    GNRMC    last_gnrmc = {};
     GPGLL    last_gpgll = {};
+    GNGLL    last_gngll = {};
     GPVTG    last_gpvtg = {};
+    GNVTG    last_gnvtg = {};
     GPTXT    last_gptxt = {};
 
 private:

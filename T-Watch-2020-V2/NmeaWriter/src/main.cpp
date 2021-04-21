@@ -40,9 +40,7 @@ uint16_t prevY[TFT_WIDTH];
 /**********************
  *   STATIC FUNCTIONS
  **********************/
-static void display_info(void);
 static void devScan(TwoWire &w);
-static void resultOutput(String str, bool ret);
 
 /**********************
  *   GLOBAL FUNCTIONS
@@ -88,25 +86,27 @@ void setup()
                                true);
         ttgo->power->clearIRQ();
     }
-    tft->fillScreen(TFT_BLACK);
+
+    ttgo->trunOnGPS();
+    ttgo->gps_begin();
+    gps = ttgo->gps;
 
     tft->fillScreen(TFT_BLACK);
     tft->setTextColor(TFT_WHITE);
     tft->setCursor(0, 0);
-
-    resultOutput("Find AXP202 Chip", find_pwr);
-
-    ttgo->trunOnGPS();
-
-    ttgo->gps_begin();
-
-    gps = ttgo->gps;
+    tft->drawString("GPS sats: ", 0, 20);
+    tft->drawString("GLONASS sats: ", 0, 40);
+    tft->drawString("BAIDOU sats: ", 0, 60);
+    tft->drawString("GNRMC: ", 0, 80);
+    tft->setTextColor(TFT_GREEN);
+    tft->drawString(String(0), 80, 20);
+    tft->drawString(String(0), 80, 40);
+    tft->drawString(String(0), 80, 60);
 }
 
 char c_buffer[200];
 void loop()
 {
-
     if (pmu_irq)
     {
         pmu_irq = false;
@@ -155,18 +155,14 @@ void loop()
             // gest the last parsed sentence type
             switch (parser.getLastProcessedType())
             {
-            // is it a GPRMC sentence?
             case NMEAParser::TYPE_GNRMC:
                 //show some of the sentence's data
-                //Serial.println("\nFound GNRMC sentence");
-                //sprintf(c_buffer, " I'm at %s %c / %s %c", parser.last_gprmc.latitude, parser.last_gprmc.north_south_indicator, parser.last_gprmc.longitude, parser.last_gprmc.east_west_indicator);
-                //Serial.println(c_buffer);
-                break;
-            case NMEAParser::TYPE_GPRMC:
-                //show some of the sentence's data
-                Serial.println("\nFound GPRMC sentence");
-                sprintf(c_buffer, " I'm at %s %c / %s %c", parser.last_gprmc.latitude, parser.last_gprmc.north_south_indicator, parser.last_gprmc.longitude, parser.last_gprmc.east_west_indicator);
-                Serial.println(c_buffer);
+                Serial.printf("GNRMC %s %c / %s %c\n", parser.last_gnrmc.latitude, parser.last_gnrmc.north_south_indicator, parser.last_gnrmc.longitude, parser.last_gnrmc.east_west_indicator);
+                tft->fillRect(80, 80, 150, 30, TFT_BLACK);
+                tft->drawString( String(parser.last_gnrmc.latitude) + " (ddmm.mmmm) " + 
+                                 String(parser.last_gnrmc.north_south_indicator), 80, 80);
+                tft->drawString( String(parser.last_gnrmc.longitude) + " (ddmm.mmmm) " + 
+                                 String(parser.last_gnrmc.east_west_indicator), 80, 100);
                 break;
             case NMEAParser::TYPE_GPGSV:
                 //show some of the sentence's data
@@ -174,9 +170,52 @@ void loop()
                 //So let's display this header only once
                 if (parser.last_gpgsv.message_idx == 1)
                 {
-                    //Serial.println("\nFound GPGSV sentence");
-                    //sprintf(c_buffer, " GPS can see %d satellites:", parser.last_gpgsv.sats_in_view);
-                    //Serial.println(c_buffer);
+                    Serial.printf("Found GPGSV sentence. GPS can see %d satellites\n", parser.last_gpgsv.sats_in_view);
+                    tft->fillRect(80, 20, 10, 10, TFT_BLACK);
+                    tft->drawString(String(parser.last_gpgsv.sats_in_view), 80, 20);
+                }  
+                /*              
+                sprintf(c_buffer, " Satellite ID=%X, elevation=%d, azimuth=%d, signal/noise ratio: %d", parser.last_gpgsv.sat1_id, parser.last_gpgsv.sat1_elevation, parser.last_gpgsv.sat1_azimuth, parser.last_gpgsv.sat1_snr);
+                Serial.println(c_buffer);
+                sprintf(c_buffer, " Satellite ID=%X, elevation=%d, azimuth=%d, signal/noise ratio: %d", parser.last_gpgsv.sat2_id, parser.last_gpgsv.sat2_elevation, parser.last_gpgsv.sat2_azimuth, parser.last_gpgsv.sat2_snr);
+                Serial.println(c_buffer);
+                sprintf(c_buffer, " Satellite ID=%X, elevation=%d, azimuth=%d, signal/noise ratio: %d", parser.last_gpgsv.sat3_id, parser.last_gpgsv.sat3_elevation, parser.last_gpgsv.sat3_azimuth, parser.last_gpgsv.sat3_snr);
+                Serial.println(c_buffer);
+                sprintf(c_buffer, " Satellite ID=%X, elevation=%d, azimuth=%d, signal/noise ratio: %d", parser.last_gpgsv.sat4_id, parser.last_gpgsv.sat4_elevation, parser.last_gpgsv.sat4_azimuth, parser.last_gpgsv.sat4_snr);
+                Serial.println(c_buffer);
+                */
+                
+                break;
+            case NMEAParser::TYPE_GLGSV:
+                //show some of the sentence's data
+                //GPGSV sentences most of the time comes in pair, sometimes more, as each of these can give info about 4 sats at a time.
+                //So let's display this header only once
+                if (parser.last_gpgsv.message_idx == 1)
+                {
+                    Serial.printf("Found GLGSV sentence. GLONASS can see %d satellites\n", parser.last_gpgsv.sats_in_view);
+                    tft->fillRect(80, 40, 10, 10, TFT_BLACK);
+                    tft->drawString(String(parser.last_gpgsv.sats_in_view), 80, 40);
+                }
+                /*
+                sprintf(c_buffer, " Satellite ID=%X, elevation=%d, azimuth=%d, signal/noise ratio: %d", parser.last_gpgsv.sat1_id, parser.last_gpgsv.sat1_elevation, parser.last_gpgsv.sat1_azimuth, parser.last_gpgsv.sat1_snr);
+                Serial.println(c_buffer);
+                sprintf(c_buffer, " Satellite ID=%X, elevation=%d, azimuth=%d, signal/noise ratio: %d", parser.last_gpgsv.sat2_id, parser.last_gpgsv.sat2_elevation, parser.last_gpgsv.sat2_azimuth, parser.last_gpgsv.sat2_snr);
+                Serial.println(c_buffer);
+                sprintf(c_buffer, " Satellite ID=%X, elevation=%d, azimuth=%d, signal/noise ratio: %d", parser.last_gpgsv.sat3_id, parser.last_gpgsv.sat3_elevation, parser.last_gpgsv.sat3_azimuth, parser.last_gpgsv.sat3_snr);
+                Serial.println(c_buffer);
+                sprintf(c_buffer, " Satellite ID=%X, elevation=%d, azimuth=%d, signal/noise ratio: %d", parser.last_gpgsv.sat4_id, parser.last_gpgsv.sat4_elevation, parser.last_gpgsv.sat4_azimuth, parser.last_gpgsv.sat4_snr);
+                Serial.println(c_buffer);
+                */
+                break;
+            case NMEAParser::TYPE_BDGSV:
+                //show some of the sentence's data
+                //BDGSV sentences most of the time comes in pair, sometimes more, as each of these can give info about 4 sats at a time.
+                //So let's display this header only once
+                if (parser.last_bdgsv.message_idx == 1)
+                {
+                    Serial.printf("Found BDGSV sentence. BAIDOU can see %d satellites\n", parser.last_bdgsv.sats_in_view);
+                    tft->fillRect(80, 60, 10, 10, TFT_BLACK);
+                    tft->drawString(String(parser.last_bdgsv.sats_in_view), 80, 60);
                 }
                 /*
                 sprintf(c_buffer, " Satellite ID=%X, elevation=%d, azimuth=%d, signal/noise ratio: %d", parser.last_gpgsv.sat1_id, parser.last_gpgsv.sat1_elevation, parser.last_gpgsv.sat1_azimuth, parser.last_gpgsv.sat1_snr);
@@ -190,8 +229,8 @@ void loop()
                 */
                 break;
             case NMEAParser::TYPE_GPTXT:
-                sprintf(c_buffer, "number_of_messages: %d, sentence_number%d, text_identifier: %d, message: %s", parser.last_gptxt.number_of_messages, parser.last_gptxt.sentence_number, parser.last_gptxt.text_identifier, parser.last_gptxt.message);
-                Serial.println(c_buffer);
+                if(strcmp(parser.last_gptxt.message, "ANTENNA OPEN") != 0)
+                    Serial.printf("TYPE_GPTXT number_of_messages: %d, sentence_number %d, text_identifier: %d, message: %s\n", parser.last_gptxt.number_of_messages, parser.last_gptxt.sentence_number, parser.last_gptxt.text_identifier, parser.last_gptxt.message);
                 break;
             case NMEAParser::UNKNOWN:
             case NMEAParser::TYPE_PLSR2451:
@@ -206,10 +245,9 @@ void loop()
             case NMEAParser::TYPE_GNGLL:
             case NMEAParser::TYPE_GPVTG:
             case NMEAParser::TYPE_GNVTG:
+            case NMEAParser::TYPE_GPRMC:
             //empty/to be implemented
-            case NMEAParser::TYPE_GNZDA:
-            case NMEAParser::TYPE_GLGSV:
-            case NMEAParser::TYPE_BDGSV:            
+            case NMEAParser::TYPE_GNZDA:           
                 break;
             }
         }
@@ -221,153 +259,11 @@ void loop()
         }
     }
 
-    //display_info();
 }
 
 /**********************
  *   STATIC FUNCTIONS
  **********************/
-
-#ifdef LILYGO_WATCH_2020_V2
-static void display_info(void)
-{
-    static uint32_t updatePeriod;
-    if (millis() - updatePeriod < 1000)
-    {
-        return;
-    }
-    updatePeriod = millis();
-
-    if (gps->date.isUpdated() && gps->time.isUpdated())
-    {
-        tft->fillRect(0, 115, 240, 35, TFT_BLACK);
-        tft->setCursor(0, 116);
-        tft->print("DATE Year:");
-        tft->print(gps->date.year());
-        tft->print(" Month:");
-        tft->print(gps->date.month());
-        tft->print(" Day:");
-        tft->println(gps->date.day());
-
-        tft->print(F("TIME Hour:"));
-        tft->print(gps->time.hour());
-        tft->print(F(" Minute:"));
-        tft->print(gps->time.minute());
-        tft->print(F(" Second:"));
-        tft->print(gps->time.second());
-
-        // Serial.print(F("DATE       Fix Age="));
-        // Serial.print(gps->date.age());
-        // Serial.print(F("ms Raw="));
-        // Serial.print(gps->date.value());
-        // Serial.print(F(" Year="));
-        // Serial.print(gps->date.year());
-        // Serial.print(F(" Month="));
-        // Serial.print(gps->date.month());
-        // Serial.print(F(" Day="));
-        // Serial.println(gps->date.day());
-
-        // Serial.print(F("TIME       Fix Age="));
-        // Serial.print(gps->time.age());
-        // Serial.print(F("ms Raw="));
-        // Serial.print(gps->time.value());
-        // Serial.print(F(" Hour="));
-        // Serial.print(gps->time.hour());
-        // Serial.print(F(" Minute="));
-        // Serial.print(gps->time.minute());
-        // Serial.print(F(" Second="));
-        // Serial.print(gps->time.second());
-        // Serial.print(F(" Hundredths="));
-        // Serial.println(gps->time.centisecond());
-    }
-    if (gps->location.isUpdated())
-    {
-        tft->fillRect(0, 150, 240, 20, TFT_BLACK);
-        tft->setCursor(0, 150);
-        tft->print(F("LOCATION  Lat:"));
-        tft->print(gps->location.lat(), 3);
-        tft->print(F(" Long="));
-        tft->println(gps->location.lng(), 3);
-
-        // Serial.print(F("LOCATION   Fix Age="));
-        // Serial.print(gps->location.age());
-        // Serial.print(F("ms Raw Lat="));
-        // Serial.print(gps->location.rawLat().negative ? "-" : "+");
-        // Serial.print(gps->location.rawLat().deg);
-        // Serial.print("[+");
-        // Serial.print(gps->location.rawLat().billionths);
-        // Serial.print(F(" billionths],  Raw Long="));
-        // Serial.print(gps->location.rawLng().negative ? "-" : "+");
-        // Serial.print(gps->location.rawLng().deg);
-        // Serial.print("[+");
-        // Serial.print(gps->location.rawLng().billionths);
-        // Serial.print(F(" billionths],  Lat="));
-        // Serial.print(gps->location.lat(), 6);
-        // Serial.print(F(" Long="));
-        // Serial.println(gps->location.lng(), 6);
-    }
-    if (gps->speed.isUpdated())
-    {
-
-        // Serial.print(F("SPEED      Fix Age="));
-        // Serial.print(gps->speed.age());
-        // Serial.print(F("ms Raw="));
-        // Serial.print(gps->speed.value());
-        // Serial.print(F(" Knots="));
-        // Serial.print(gps->speed.knots());
-        // Serial.print(F(" MPH="));
-        // Serial.print(gps->speed.mph());
-        // Serial.print(F(" m/s="));
-        // Serial.print(gps->speed.mps());
-        // Serial.print(F(" km/h="));
-        // Serial.println(gps->speed.kmph());
-    }
-    if (gps->course.isUpdated())
-    {
-
-        // Serial.print(F("COURSE     Fix Age="));
-        // Serial.print(gps->course.age());
-        // Serial.print(F("ms Raw="));
-        // Serial.print(gps->course.value());
-        // Serial.print(F(" Deg="));
-        // Serial.println(gps->course.deg());
-    }
-    if (gps->altitude.isUpdated())
-    {
-
-        // Serial.print(F("ALTITUDE   Fix Age="));
-        // Serial.print(gps->altitude.age());
-        // Serial.print(F("ms Raw="));
-        // Serial.print(gps->altitude.value());
-        // Serial.print(F(" Meters="));
-        // Serial.print(gps->altitude.meters());
-        // Serial.print(F(" Miles="));
-        // Serial.print(gps->altitude.miles());
-        // Serial.print(F(" KM="));
-        // Serial.print(gps->altitude.kilometers());
-        // Serial.print(F(" Feet="));
-        // Serial.println(gps->altitude.feet());
-    }
-    if (gps->satellites.isUpdated())
-    {
-
-        // Serial.print(F("SATELLITES Fix Age="));
-        // Serial.print(gps->satellites.age());
-        // Serial.print(F("ms Value="));
-        // Serial.println(gps->satellites.value());
-    }
-    if (gps->hdop.isUpdated())
-    {
-
-        // Serial.print(F("HDOP       Fix Age="));
-        // Serial.print(gps->hdop.age());
-        // Serial.print(F("ms Value="));
-        // Serial.println(gps->hdop.value());
-    }
-    delay(20);
-}
-#endif
-
 static void devScan(TwoWire &w)
 {
     uint8_t err, addr;
@@ -418,13 +314,4 @@ static void devScan(TwoWire &w)
             Serial.println(addr, HEX);
         }
     }
-}
-
-static void resultOutput(String str, bool ret)
-{
-    tft->setTextColor(TFT_WHITE);
-    tft->drawString(str, 0, tft->getCursorY());
-    tft->setTextColor(ret ? TFT_GREEN : TFT_RED);
-    tft->drawRightString(ret ? "[OK]" : "[FAIL]", tft->width() - 5, tft->getCursorY(), tft->textfont);
-    tft->println();
 }

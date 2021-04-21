@@ -47,16 +47,14 @@ bool NMEAParser::dispatch(const char *str) {
             //GLGSV
             if (str[3] == 'G' && str[4] == 'S' && str[5] == 'V') 
             {
-                last_processed = NMEAParser::TYPE_GLGSV;
-                return true;
+                return parse_glgsv(str);
             }
         }
         else if (str[1] == 'B' && str[2] == 'D') {
-            //GLGSV
+            //BDGSV
             if (str[3] == 'G' && str[4] == 'S' && str[5] == 'V') 
             {
-                last_processed = NMEAParser::TYPE_BDGSV;
-                return true;
+                return parse_bdgsv(str);
             }
         }
         else if (str[1] == 'G' && str[2] == 'N') {
@@ -73,6 +71,7 @@ bool NMEAParser::dispatch(const char *str) {
             //GNZDA
             else if (str[3] == 'Z' && str[4] == 'D' && str[5] == 'A')
             {
+                //to be implemented
                 last_processed = NMEAParser::TYPE_GNZDA;
                 return true;
             }
@@ -164,26 +163,26 @@ bool NMEAParser::parse_gpgga(const char *str) {
 
 bool NMEAParser::parse_gngga(const char *str) {
     checksum = 0;
-    scanned = my_sscanf(&last_gpgga.fieldValidity, str, "$GNGGA,%s,%s,%c,%s,%c,%d,%d,%f,%f,%s,%f,%s,%f,%d*%X",
-            last_gpgga.utc_time,
-            last_gpgga.latitude,
-            &last_gpgga.north_south_indicator,
-            last_gpgga.longitude,
-            &last_gpgga.east_west_indicator,
-            &last_gpgga.position_fix,
-            &last_gpgga.satellites_used,
-            &last_gpgga.hdop,
-            &last_gpgga.msl_altitude,
-            last_gpgga.msl_unit,
-            &last_gpgga.geoid_separation,
-            last_gpgga.geoid_unit,
-            &last_gpgga.age_of_diff_corr,
-            &last_gpgga.station_id,
+    scanned = my_sscanf(&last_gngga.fieldValidity, str, "$GNGGA,%s,%s,%c,%s,%c,%d,%d,%f,%f,%s,%f,%s,%f,%d*%X",
+            last_gngga.utc_time,
+            last_gngga.latitude,
+            &last_gngga.north_south_indicator,
+            last_gngga.longitude,
+            &last_gngga.east_west_indicator,
+            &last_gngga.position_fix,
+            &last_gngga.satellites_used,
+            &last_gngga.hdop,
+            &last_gngga.msl_altitude,
+            last_gngga.msl_unit,
+            &last_gngga.geoid_separation,
+            last_gngga.geoid_unit,
+            &last_gngga.age_of_diff_corr,
+            &last_gngga.station_id,
             &checksum);
 
-    last_gpgga.isValid = ((scanned == 15) && check_checksum(str));
+    last_gngga.isValid = ((scanned == 15) && check_checksum(str));
     last_processed = NMEAParser::TYPE_GNGGA;
-    return last_gpgga.isValid;
+    return last_gngga.isValid;
 }
 
 bool NMEAParser::parse_gpgsa(const char *str) {
@@ -216,30 +215,29 @@ bool NMEAParser::parse_gpgsa(const char *str) {
 bool NMEAParser::parse_gngsa(const char *str) {
     //not working
     checksum = 0;
-    scanned = my_sscanf(&last_gpgsa.fieldValidity, str, "$GNGSA,%c,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f*%X",
-            &last_gpgsa.mode1,
-            &last_gpgsa.mode2,
-            &last_gpgsa.sat_channel_1,
-            &last_gpgsa.sat_channel_2,
-            &last_gpgsa.sat_channel_3,
-            &last_gpgsa.sat_channel_4,
-            &last_gpgsa.sat_channel_5,
-            &last_gpgsa.sat_channel_6,
-            &last_gpgsa.sat_channel_7,
-            &last_gpgsa.sat_channel_8,
-            &last_gpgsa.sat_channel_9,
-            &last_gpgsa.sat_channel_10,
-            &last_gpgsa.sat_channel_11,
-            &last_gpgsa.sat_channel_12,
-            &last_gpgsa.pdop,
-            &last_gpgsa.hdop,
-            &last_gpgsa.vdop,
+    scanned = my_sscanf(&last_gngsa.fieldValidity, str, "$GNGSA,%c,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%f,%f,%f*%X",
+            &last_gngsa.mode1,
+            &last_gngsa.mode2,
+            &last_gngsa.sat_channel_1,
+            &last_gngsa.sat_channel_2,
+            &last_gngsa.sat_channel_3,
+            &last_gngsa.sat_channel_4,
+            &last_gngsa.sat_channel_5,
+            &last_gngsa.sat_channel_6,
+            &last_gngsa.sat_channel_7,
+            &last_gngsa.sat_channel_8,
+            &last_gngsa.sat_channel_9,
+            &last_gngsa.sat_channel_10,
+            &last_gngsa.sat_channel_11,
+            &last_gngsa.sat_channel_12,
+            &last_gngsa.pdop,
+            &last_gngsa.hdop,
+            &last_gngsa.vdop,
             &checksum);
 
-    last_gpgsa.isValid = ((scanned == 18) && check_checksum(str));
+    last_gngsa.isValid = ((scanned == 18) && check_checksum(str));
     last_processed = NMEAParser::TYPE_GNGSA;
-    //return last_gpgsa.isValid;
-    return true;
+    return last_gngsa.isValid;
 }
 
 
@@ -272,6 +270,63 @@ bool NMEAParser::parse_gpgsv(const char *str) {
     return last_gpgsv.isValid;
 }
 
+bool NMEAParser::parse_glgsv(const char *str) {
+    checksum = 0;
+    scanned = my_sscanf(&last_glgsv.fieldValidity, str, "$GLGSV,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d*%X",
+            &last_glgsv.number_of_messages,
+            &last_glgsv.message_idx,
+            &last_glgsv.sats_in_view,
+            &last_glgsv.sat1_id,
+            &last_glgsv.sat1_elevation,
+            &last_glgsv.sat1_azimuth,
+            &last_glgsv.sat1_snr,
+            &last_glgsv.sat2_id,
+            &last_glgsv.sat2_elevation,
+            &last_glgsv.sat2_azimuth,
+            &last_glgsv.sat2_snr,
+            &last_glgsv.sat3_id,
+            &last_glgsv.sat3_elevation,
+            &last_glgsv.sat3_azimuth,
+            &last_glgsv.sat3_snr,
+            &last_glgsv.sat4_id,
+            &last_glgsv.sat4_elevation,
+            &last_glgsv.sat4_azimuth,
+            &last_glgsv.sat4_snr,
+            &checksum);
+
+    last_glgsv.isValid = ((scanned == 20) && check_checksum(str));
+    last_processed = NMEAParser::TYPE_GLGSV;
+    return last_glgsv.isValid;
+}
+
+bool NMEAParser::parse_bdgsv(const char *str) {
+    checksum = 0;
+    scanned = my_sscanf(&last_bdgsv.fieldValidity, str, "$BDGSV,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d*%X",
+            &last_bdgsv.number_of_messages,
+            &last_bdgsv.message_idx,
+            &last_bdgsv.sats_in_view,
+            &last_bdgsv.sat1_id,
+            &last_bdgsv.sat1_elevation,
+            &last_bdgsv.sat1_azimuth,
+            &last_bdgsv.sat1_snr,
+            &last_bdgsv.sat2_id,
+            &last_bdgsv.sat2_elevation,
+            &last_bdgsv.sat2_azimuth,
+            &last_bdgsv.sat2_snr,
+            &last_bdgsv.sat3_id,
+            &last_bdgsv.sat3_elevation,
+            &last_bdgsv.sat3_azimuth,
+            &last_bdgsv.sat3_snr,
+            &last_bdgsv.sat4_id,
+            &last_bdgsv.sat4_elevation,
+            &last_bdgsv.sat4_azimuth,
+            &last_bdgsv.sat4_snr,
+            &checksum);
+
+    last_bdgsv.isValid = ((scanned == 20) && check_checksum(str));
+    last_processed = NMEAParser::TYPE_BDGSV;
+    return last_bdgsv.isValid;
+}
 
 bool NMEAParser::parse_hchdg(const char *str) {
     checksum = 0;
@@ -312,24 +367,24 @@ bool NMEAParser::parse_gprmc(const char *str) {
 
 bool NMEAParser::parse_gnrmc(const char *str) {
     checksum = 0;
-    scanned = my_sscanf(&last_gprmc.fieldValidity, str, "$GNRMC,%s,%c,%s,%c,%s,%c,%f,%f,%s,%f,%c,%c*%X",
-            &last_gprmc.utc_time,
-            &last_gprmc.status,
-            last_gprmc.latitude,
-            &last_gprmc.north_south_indicator,
-            last_gprmc.longitude,
-            &last_gprmc.east_west_indicator,
-            &last_gprmc.speed_over_ground,
-            &last_gprmc.course_over_ground,
-            last_gprmc.date,
-            &last_gprmc.magnetic_variation,
-            &last_gprmc.variation_sense,
-            &last_gprmc.mode,
+    scanned = my_sscanf(&last_gnrmc.fieldValidity, str, "$GNRMC,%s,%c,%s,%c,%s,%c,%f,%f,%s,%f,%c,%c*%X",
+            &last_gnrmc.utc_time,
+            &last_gnrmc.status,
+            last_gnrmc.latitude,
+            &last_gnrmc.north_south_indicator,
+            last_gnrmc.longitude,
+            &last_gnrmc.east_west_indicator,
+            &last_gnrmc.speed_over_ground,
+            &last_gnrmc.course_over_ground,
+            last_gnrmc.date,
+            &last_gnrmc.magnetic_variation,
+            &last_gnrmc.variation_sense,
+            &last_gnrmc.mode,
             &checksum);
 
-    last_gprmc.isValid = ((scanned == 13) && check_checksum(str));
+    last_gnrmc.isValid = ((scanned == 13) && check_checksum(str));
     last_processed = NMEAParser::TYPE_GNRMC;
-    return last_gprmc.isValid;
+    return last_gnrmc.isValid;
 }
 
 bool NMEAParser::parse_gpgll(const char *str) {
@@ -350,18 +405,18 @@ bool NMEAParser::parse_gpgll(const char *str) {
 
 bool NMEAParser::parse_gngll(const char *str) {
     checksum = 0;
-    scanned = my_sscanf(&last_gpgll.fieldValidity, str, "$GPGLL,%s,%c,%s,%c,%s,%c*%X",
-            last_gpgll.latitude,
-            &last_gpgll.north_south_indicator,
-            last_gpgll.longitude,
-            &last_gpgll.east_west_indicator,
-            last_gpgll.fix_time,
-            &last_gpgll.data_active,
+    scanned = my_sscanf(&last_gngll.fieldValidity, str, "$GPGLL,%s,%c,%s,%c,%s,%c*%X",
+            last_gngll.latitude,
+            &last_gngll.north_south_indicator,
+            last_gngll.longitude,
+            &last_gngll.east_west_indicator,
+            last_gngll.fix_time,
+            &last_gngll.data_active,
             &checksum);
 
-    last_gpgll.isValid = ((scanned == 7) && check_checksum(str));
+    last_gngll.isValid = ((scanned == 7) && check_checksum(str));
     last_processed = NMEAParser::TYPE_GNGLL;
-    return last_gpgll.isValid;
+    return last_gngll.isValid;
 }
 
 bool NMEAParser::parse_gpvtg(const char *str) {
@@ -415,8 +470,6 @@ bool NMEAParser::parse_gptxt(const char *str) {
     last_processed = NMEAParser::TYPE_GPTXT;
     return last_gptxt.isValid;
 }
-
-
 
 
 
